@@ -655,59 +655,134 @@ def get_role_count(request):
 def total_product(request):
     count_product=product_details.objects.count()
     return Response({"Total Product":count_product},status=200)  
-            
+           
+
+
 @api_view(['GET'])
 def over_all_details(request):
-    username = request.query_params.get('username')
-    product_id = request.query_params.get("product_details")
+    product_details_qs = product_details.objects.all()
+    product_options_qs = product_options.objects.all()
+    plan_product_qs = plan_product.objects.all()
+    schedule_qs = schedule.objects.all()
+    schedule_process_qs = schedule_process.objects.all()
+    account_page_qs = account_page.objects.all()
+    product_material_qs = product_material.objects.all()
 
-    if not product_id or not username:
-        return Response({"msg": "product id and username are required"}, status=400)
+    product_details_list = [
+        {
+            "Company_name": pro.Company_name,
+            "serial_number": pro.serial_number,
+            "date": pro.date,
+            "Customer_name": pro.Customer_name,
+            "Customer_No": pro.Customer_No,
+            "Customer_date": pro.Customer_date,
+            "mobile": pro.mobile,
+            "created_by":pro.created_by.username
+        }
+        for pro in product_details_qs
+    ]
 
-    user = None
-    for model in [role1, QA, product, accountent, Admin]:
-        try:
-            user = model.objects.get(username=username)
-            break
-        except model.DoesNotExist:
-            continue
 
-    if not user:
-        return Response({"msg": "user not found"}, status=404)
+    product_material_list = [
+        {
+            "material_Description": mat.material_Description,
+            "Quantity": mat.Quantity,
+            "Remarks": mat.Remarks
+        }
+        for mat in product_material_qs
+    ]
+    
+    product_options_list =[
+        {
+        "product_material":opt.product_material.id,
+        "size":opt.size,
+        "Thick":opt.Thick,
+        "Grade":opt.Grade,
+        "Drawing":opt.Drawing,
+        "Test_Certificate":opt.Test_Certificate
+        }
+        for opt in product_options_qs
+    ]
 
-    try:
-        product = product_details.objects.get(id=product_id)
-    except product_details.DoesNotExist:
-        return Response({"msg": "product not found"}, status=404)
+    plan_product_list =[
+        {
+        "product_detail":plan.product_detail.id,
+        "program_no":plan.program_no,
+        "lm_co1":plan.lm_co1,
+        "lm_co2":plan.lm_co2,
+        "lm_co3":plan.lm_co3,
+        "fm_co1":plan.fm_co1,
+        "fm_co2":plan.fm_co2,
+        "fm_co3":plan.fm_co3,
+        "status":plan.status,
+        "created_by":plan.created_by.username
 
-    product_mat = []
-    for mat in product_material.objects.filter(product_detail=product):
-        # Nested options for each material
-        options_list = []
-        for opt in product_options.objects.filter(product_material=mat):
-            options_list.append({
-                "option_id": opt.id,
-                "size": opt.size,
-                "thick": opt.Thick,
-                "grade": opt.Grade,
-                "drawing": opt.Drawing,
-                "test_certificate": opt.Test_Certificate
-            })
+        }
+        for plan in plan_product_qs
+        ]
+    schedule_list=[
 
-        product_mat.append({
-            "material_id": mat.id,
-            "description": mat.material_Description,
-            "quantity": mat.Quantity,
-            "remarks": mat.Remarks,
-            "options": options_list  # Nested options here
-        })
+        {
+            "product_plan":sch.product_plan.id,
+            "commitment_date":sch.commitment_date,
+            "planning_date":sch.planning_date,
+            "date_of_inspection":sch.date_of_inspection,
+            "date_of_delivery":sch.date_of_delivery,
+            "created_by":sch.created_by.username
 
-    return Response({
-        "product_name": product.Company_name,
-        "product_id": product.id,
-        "materials": product_mat
-    }, status=200)
+
+        }
+        for sch in schedule_qs
+    ]
+
+    schedule_process_list =[
+        {
+            "schedule_name":spro.schedule_name.id,
+            "process_date":spro.process_date,
+            "cycle_time":spro.cycle_time,
+            "operator_name":spro.operator_name,
+            "remark":spro.remark
+        }
+        for spro in schedule_process_qs
+
+    ]
+
+    account_page_list =[
+        {
+            "inv_on":acc.inv_on,
+            "Date":acc.Date,
+            "Amount":acc.Amount,
+            "mode_of_pay":acc.mode_of_pay,
+            "mat_inspected":acc.mat_inspected,
+            "mat_received":acc.mat_received,
+            "process_plan":acc.process_plan,
+            "process_approve":acc.process_approve,
+            "remark":acc.remark,
+            "created_by":acc.created_by.username
+
+
+
+        }
+        for acc in account_page_qs
+
+    ]
+
+    response_data = {
+        "product_details": product_details_list,
+        "product_materials": product_material_list,
+        "product_options": product_options_list,
+        "plan_products": plan_product_list,
+        "schedules": schedule_list,
+        "schedule_processes": schedule_process_list,
+        "account_pages": account_page_list
+    }
+
+    return Response(response_data)
+
 
       
-     
-     
+  
+
+      
+      
+      
